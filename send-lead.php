@@ -26,10 +26,33 @@ $project   = val('project');
 $message   = val('message');
 $visitdate = val('visitdate');
 $slot      = val('slot');
+$company   = val('company');
+$location  = val('location');
+$reptype   = val('reptype');
 
 /* ---- Validate ---- */
 if ($name === '' || $phone === '') {
     echo json_encode(['ok' => false, 'error' => 'Name and mobile number are required.']);
+    exit;
+}
+if ($type === 'feedback' && $email === '') {
+    echo json_encode(['ok' => false, 'error' => 'Email address is required.']);
+    exit;
+}
+if ($type === 'feedback' && $message === '') {
+    echo json_encode(['ok' => false, 'error' => 'Comments are required.']);
+    exit;
+}
+if ($type === 'agent' && ($email === '' || $message === '')) {
+    echo json_encode(['ok' => false, 'error' => 'Email and profile are required.']);
+    exit;
+}
+if ($type === 'agent' && $reptype === 'Company' && $company === '') {
+    echo json_encode(['ok' => false, 'error' => 'Company name is required.']);
+    exit;
+}
+if (($type === 'jv' || $type === 'customercell') && ($email === '' || $message === '')) {
+    echo json_encode(['ok' => false, 'error' => 'Email and your message are required.']);
     exit;
 }
 if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -37,24 +60,76 @@ if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-$isVisit = ($type === 'visit');
-$subject = $isVisit
-    ? 'Site Visit Enquiry from Amarprakash website'
-    : 'Enquiry from Amarprakash website';
+$isVisit        = ($type === 'visit');
+$isFeedback     = ($type === 'feedback');
+$isAgent        = ($type === 'agent');
+$isJV           = ($type === 'jv');
+$isCustomerCell = ($type === 'customercell');
+if ($isVisit) {
+    $subject = 'Site Visit Enquiry from Amarprakash website';
+} elseif ($isFeedback) {
+    $subject = 'Feedback from Amarprakash website';
+} elseif ($isAgent) {
+    $subject = 'Become an Agent — application from Amarprakash website';
+} elseif ($isJV) {
+    $subject = 'Joint Venture / Outright Sales enquiry from Amarprakash website';
+} elseif ($isCustomerCell) {
+    $subject = 'Customer Cell enquiry from Amarprakash website';
+} else {
+    $subject = 'Enquiry from Amarprakash website';
+}
 
 /* ---- Build rows ---- */
+$enquiryType = $isVisit ? 'Site Visit Request' : ($isFeedback ? 'Website Feedback' : ($isAgent ? 'Agent Application' : ($isJV ? 'Joint Venture / Outright Sales' : ($isCustomerCell ? 'Customer Cell Enquiry' : 'General Enquiry'))));
 $rows = [
-    'Enquiry Type'      => $isVisit ? 'Site Visit Request' : 'General Enquiry',
-    'Full Name'         => $name,
+    'Enquiry Type'      => $enquiryType,
+    ($isJV ? 'Name of the Owner' : 'Full Name') => $name,
     'Mobile Number'     => $phone,
     'Email Address'     => $email !== '' ? $email : '—',
-    'Interested Project'=> $project !== '' ? $project : '—',
 ];
+if ($isAgent) {
+    $rows['Represents'] = $reptype !== '' ? $reptype : 'Individual';
+    if ($reptype === 'Company' || $company !== '') {
+        $rows['Company Name'] = $company !== '' ? $company : '—';
+    }
+    $rows['Location'] = $location !== '' ? $location : '—';
+}
+if ($isJV) {
+    $dim = trim(implode('  ', array_filter([
+        val('dim_n') !== '' ? 'N: ' . val('dim_n') : '',
+        val('dim_s') !== '' ? 'S: ' . val('dim_s') : '',
+        val('dim_e') !== '' ? 'E: ' . val('dim_e') : '',
+        val('dim_w') !== '' ? 'W: ' . val('dim_w') : '',
+    ])));
+    $rows['Name of the Mediator'] = val('mediator') !== '' ? val('mediator') : '—';
+    $rows['Property Area']        = val('parea') !== '' ? val('parea') : '—';
+    $rows['Property Address']     = val('address') !== '' ? nl2br(htmlspecialchars(val('address'))) : '—';
+    $rows['Sized Dimension / Ratio'] = $dim !== '' ? htmlspecialchars($dim) : '—';
+    $rows['Dimension']            = val('dimension') !== '' ? val('dimension') : '—';
+    $rows['Frontage']             = val('frontage') !== '' ? val('frontage') : '—';
+    $rows['Road Width']           = val('roadwidth') !== '' ? val('roadwidth') : '—';
+    $rows['Road Facing Direction']= val('roadface') !== '' ? val('roadface') : '—';
+    $rows['Option']               = val('jvoption') !== '' ? val('jvoption') : '—';
+    $rows['Expected Ratio']       = val('expratio') !== '' ? val('expratio') : '—';
+    $rows['Rate Per Ground']      = val('rateperground') !== '' ? val('rateperground') : '—';
+}
+if ($isCustomerCell) {
+    $rows['Resident Type']     = val('ctype') !== '' ? val('ctype') : '—';
+    $rows['Country']           = val('country') !== '' ? val('country') : '—';
+    $rows['Address']           = val('address') !== '' ? nl2br(htmlspecialchars(val('address'))) : '—';
+    $rows['Location Preferred']= $location !== '' ? $location : '—';
+    $rows['Project Preferred'] = $project !== '' ? $project : '—';
+    $rows['Investment Range']  = val('investment_range') !== '' ? val('investment_range') : '—';
+}
+if (!$isFeedback && !$isAgent && !$isJV && !$isCustomerCell) {
+    $rows['Interested Project'] = $project !== '' ? $project : '—';
+}
 if ($isVisit) {
     $rows['Preferred Visit Date']  = $visitdate !== '' ? $visitdate : '—';
     $rows['Preferred Time Window'] = $slot !== '' ? $slot : '—';
 }
-$rows['Message'] = $message !== '' ? nl2br(htmlspecialchars($message)) : '—';
+$msgLabel = $isFeedback ? 'Comments' : ($isAgent ? 'Profile' : ($isJV ? 'Other Comments' : ($isCustomerCell ? 'Your Enquiry' : 'Message')));
+$rows[$msgLabel] = $message !== '' ? nl2br(htmlspecialchars($message)) : '—';
 
 $rowsHtml = '';
 $i = 0;
@@ -67,8 +142,8 @@ foreach ($rows as $k => $v) {
     $i++;
 }
 
-$eyebrow = $isVisit ? 'NEW SITE VISIT REQUEST' : 'NEW WEBSITE ENQUIRY';
-$intro   = $isVisit ? 'a new site visit request' : 'a new enquiry';
+$eyebrow = $isVisit ? 'NEW SITE VISIT REQUEST' : ($isFeedback ? 'NEW WEBSITE FEEDBACK' : ($isAgent ? 'NEW AGENT APPLICATION' : ($isJV ? 'NEW JOINT VENTURE ENQUIRY' : ($isCustomerCell ? 'NEW CUSTOMER CELL ENQUIRY' : 'NEW WEBSITE ENQUIRY'))));
+$intro   = $isVisit ? 'a new site visit request' : ($isFeedback ? 'a new feedback submission' : ($isAgent ? 'a new agent application' : ($isJV ? 'a new joint venture / outright sales enquiry' : ($isCustomerCell ? 'a new customer cell enquiry' : 'a new enquiry'))));
 
 $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;background:#f4f6f9;padding:24px;">
