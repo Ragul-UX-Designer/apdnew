@@ -1,0 +1,7 @@
+﻿User-agent: *
+Allow: /
+
+# Keep legacy source and raw form endpoints out of the index
+Disallow: /Reference/
+
+Sitemap: https://www.amarprakash.in/royal_castle/sitemap.xml
