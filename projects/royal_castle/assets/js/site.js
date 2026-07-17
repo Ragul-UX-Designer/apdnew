@@ -72,7 +72,7 @@
     '<div class="max-w-7xl mx-auto px-6">'+
       '<div class="grid md:grid-cols-4 gap-10">'+
         '<div class="bg-ink p-6 rounded-xl border border-gold/10 shadow-lg">'+
-          '<img src="assets/img/amarprakash-logo.png" alt="Amarprakash" class="h-10 mb-6" onerror="this.src=\'assets/img/the-royal-castle.png\'"/>'+
+          '<a href="https://www.amarprakash.in/" target="_blank" rel="noopener" class="inline-block mb-6"><img src="assets/img/amarprakash-logo.png" alt="Amarprakash" class="h-10" onerror="this.src=\'assets/img/the-royal-castle.png\'"/></a>'+
           '<p class="text-cream/70 text-sm leading-relaxed mb-6">Tamilnadu\'s most trusted developer, building quality homes across Chennai since 2004.<br><br>Happiness lives here.</p>'+
           '<div class="flex gap-2">'+
             '<div class="bg-white rounded p-1.5 w-10 h-10 flex items-center justify-center"><img src="assets/img/credai_logo.jpg" alt="CREDAI" class="max-w-full max-h-full" onerror="this.style.display=\'none\'"/></div>'+
